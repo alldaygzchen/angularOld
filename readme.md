@@ -1,3 +1,5 @@
+# Chap 1: Intro
+
 - ng new my-project --standalone false
 - app.module.ts (bootstrap): which component should you aware when the whole application starts
 - app.module.ts (declarations): components, directives, pipe
@@ -13,26 +15,26 @@
     <div class="col-xs-12">
       <h3 class="text-primary">I'm in the App component</h3>
       <hr />
-      <!-- <app-servers class="text-warning"></app-servers> --> #all works
-      <!-- <div app-servers class="text-warning"></div> --> #all works
-      <!-- <div class="app-servers text-warning"></div> --> #all works
+      <!-- <app-servers class="text-warning"></app-servers> --> # element selector
+      <!-- <div app-servers class="text-warning"></div> --> # attribute selector
+      <!-- <div class="app-servers text-warning"></div> --> # class selector
     </div>
   </div>
 </div>
 
-
+remark: attribute(intial values for dom) selector mostly used in directives(instruction of the dom)
 ```
 
 - databinding: communincation between typescript and template
 
 ```
 Code to template (output data) => string interpolation {{data}} , property binding [property]="data"
-Event binding (react to user events) => (event)="expression"
+Template to code (Event binding) => (event)="expression"
 Output data + react event (two way binding) => [(ngModel)]="data"
 
 ```
 
-- string interpolation: can contain any single expression that can resolve to a string {{2024}}
+- string interpolation: can contain any single expression that can resolve a string e.g. {{2024}}, {{getString()}}
 - property vs attribute
 
 ```
@@ -41,6 +43,7 @@ Output data + react event (two way binding) => [(ngModel)]="data"
 
 <!-- Property Binding in Angular -->
 <input [value]="name" /> //value is the property
+<p [innerText]="allowNewServer"></p>
 
 <!-- Attribute in Angular -->
 <input value="{{name}}" /> // value="hello" is an attribute
@@ -50,6 +53,8 @@ Output data + react event (two way binding) => [(ngModel)]="data"
 
 ```
 property initialization => constructor => ngOnInit
+property initialization:
+Good for setting default values that are static or don’t depend on any parameters or logic that the constructor might need.
 ```
 
 - type annotation vs type assertion
@@ -79,7 +84,7 @@ onUpdateServerName(event: any) {
   }
 ```
 
-- two way binding binds the event and output data of that element
+- two way binding binds the event and output data of that element itself
 - Directives are instruction of the dom
 
 ```
@@ -91,7 +96,7 @@ e.g.
 ```
 
 - ng-template vs ng-container
-- Template variables in Angular allow you to reference elements or Angular components within the template. In this case, #noServer is a reference to the <ng-template>
+- Template variables: Allow you to reference elements or Angular components within the template. In this case, #noServer is a reference to the ng-template
 
 ```
 - directives: structural directives and attribute directives
