@@ -1,0 +1,16 @@
+<div class="container">
+  <div class="row">
+    <div class="col-xs-12">
+      <label>user name: </label>
+      <input type="text" [(ngModel)]="userName" class="form-control" />
+      <p>current user name : {{ userName }}</p>
+      <button
+        (click)="onReset($event)"
+        [disabled]="isEmpty()"
+        class="btn btn-primary"
+      >
+        Reset
+      </button>
+    </div>
+  </div>
+</div>

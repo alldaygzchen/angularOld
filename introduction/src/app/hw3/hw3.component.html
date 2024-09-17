@@ -1,0 +1,17 @@
+<button class="btn btn-primary" (click)="addNumber()">Display details</button>
+<p *ngIf="showDetails">{{ details }}</p>
+<!-- <div
+  *ngFor="let content of contents"
+  [ngStyle]="{ color: getColor(content) }"
+  [ngClass]="{ overFiveColor: content > 5 }"
+>
+  {{ content }}
+</div> -->
+
+<div
+  *ngFor="let content of contents; let i = index"
+  [ngStyle]="{ color: getColor(i + 1) }"
+  [ngClass]="{ overFiveColor: i + 1 > 5 }"
+>
+  {{ content }}
+</div>
