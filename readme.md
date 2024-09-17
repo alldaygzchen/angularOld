@@ -178,3 +178,10 @@ e.g.
 </div>
 
 ```
+
+# Chap 2: Start
+
+- ng new recipe --no-strict --routing false --standalone false
+- npm install bootstrap@3
+- node_modules/bootstrap/dist/css/bootstrap.min.css
+- 368
