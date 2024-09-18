@@ -184,4 +184,17 @@ e.g.
 - ng new recipe --no-strict --routing false --standalone false
 - npm install bootstrap@3
 - node_modules/bootstrap/dist/css/bootstrap.min.css
-- 368
+- ngclass vs class
+
+```
+    <div
+      class="navbar-collapse"
+      [ngClass]="{ collapse: collapsed }"
+      (window:resize)="collapsed = true"
+    >
+    <div
+      class="navbar-collapse"
+      [class.collapse]="collapsed"
+      (window:resize)="collapsed = true"
+    >
+```
