@@ -1,3 +1,5 @@
+https://github.com/juanpetterson/angular-the-complete-guide
+
 # Chap 1: Intro
 
 - ng new my-project --standalone false
@@ -197,4 +199,530 @@ e.g.
       [class.collapse]="collapsed"
       (window:resize)="collapsed = true"
     >
+```
+
+# Chap 3
+
+- component tag custom property (let property bindable for parent component)
+
+```
+  ### server-element.component.ts ###
+  export class ServerElementComponent {
+    @Input('srvElement') element: {
+      type: string;
+      name: string;
+      content: string;
+    };
+  }
+
+  ### app.component.html ###
+    <div class="row">
+    <div class="col-xs-12">
+      <app-server-element
+        *ngFor="let serverElement of serverElements"
+        [srvElement]="serverElement"
+      ></app-server-element>
+    </div>
+  </div>
+
+```
+
+- component tag custom event: (let event bindable for parent component)
+
+```
+  ### cockpit.component.ts ###
+  export class CockpitComponent {
+    @Output('svCreated') serverCreated = new EventEmitter<{
+      serverName: string;
+      serverContent: string;
+    }>();
+
+    newServerName = '';
+    newServerContent = '';
+
+    onAddServer() {
+      this.serverCreated.emit({
+        serverName: this.newServerName,
+        serverContent: this.newServerContent,
+      });
+    }
+  }
+
+  ### app.component.html ###
+  <app-cockpit
+    (svCreated)="onServerAdded($event)"
+  ></app-cockpit>
+
+  ### app.component.ts ###
+  onServerAdded(serverData: { serverName: string; serverContent: string }) {
+    this.serverElements.push({
+      type: 'server',
+      name: serverData.serverName,
+      content: serverData.serverContent,
+    });
+  }
+
+```
+
+- Angular gives same attribute to all elements in a component to enforce style encapsulation
+
+```
+@Component({
+  selector: 'app-server-element',
+  templateUrl: './server-element.component.html',
+  styleUrl: './server-element.component.css',
+  // encapsulation:ViewEncapsulation.Emulated (default)
+})
+```
+
+- access local reference in typescript using events
+
+```
+### html ###
+<input type="text" class="form-control" #serverNameInput />
+<button class="btn btn-primary" (click)="onAddServer(serverNameInput)">
+      Add Server
+</button>
+
+### ts ###
+
+  onAddServer(nameInput: HTMLInputElement) {
+    this.serverCreated.emit({
+      serverName: nameInput.value,
+      serverContent: this.newServerContent,
+    });
+  }
+```
+
+- access local reference in typescript using @ViewChild()
+
+```
+### html ###
+<input type="text" class="form-control" #serverContentInput />
+
+### ts ###
+@ViewChild('serverContentInput') serverContentInput: ElementRef;
+
+onAddServer(nameInput: HTMLInputElement) {
+    this.serverCreated.emit({
+      serverName: nameInput.value,
+      serverContent: this.serverContentInput.nativeElement.value,
+    });
+  }
+```
+
+```
+@ViewChild('serverContentInput') serverContentInput: ElementRef;
+
+inside of ngOnInit(): {static: true}
+outside of ngOnInit(): {static: false}  default
+```
+
+- projecting content from outside into components
+
+```
+
+  ### app.component.html ###
+  <app-server-element
+    *ngFor="let serverElement of serverElements"
+    [srvElement]="serverElement"
+  >
+    <p>
+      <strong *ngIf="serverElement.type === 'server'" style="color: red">{{
+        serverElement.content
+      }}</strong>
+      <em *ngIf="serverElement.type === 'blueprint'">{{
+        serverElement.content
+      }}</em>
+    </p>
+  </app-server-element>
+
+  ### server-element.component.html ###
+  <div class="panel panel-default">
+    <div class="panel-heading">{{ element.name }}</div>
+    <div class="panel-body">
+      <ng-content></ng-content>
+    </div>
+  </div>
+
+```
+
+- lifecycle
+
+```
+init phase: constructor -> ngOnChanges -> ngOnInit -> ngDoCheck -> ngAfterContent-> ngAfterContentChecked -> ngAfterViewInint-> ngAfterViewChecked
+change phase: ngOnChanges -> ngDoCheck -> ngAfterContentChecked -> ngAfterContentChecked
+```
+
+- Besides ViewChild, there is also ContentChild in component.ts
+
+```
+inside of ngOnInit(): {static: true}
+outside of ngOnInit(): {static: false}  default
+```
+
+# Chap 4
+
+- attribute vs structural directives
+- Dependency injection: Angular initializes for you (no need for manual instantiation due to same instance service)
+- Directive also have life cycle (ngOnInit)
+
+```
+### basic-highlight.directive.ts ###
+
+@Directive({
+  selector: '[appBasicHighlight]'
+})
+export class BasicHighlightDirective implements OnInit {
+  constructor(private elementRef: ElementRef) {
+  }
+
+  ngOnInit() {
+    this.elementRef.nativeElement.style.backgroundColor = 'green';
+  }
+}
+
+### app.component.html ###
+<p appBasicHighlight>Style me with basic directive!</p>
+
+```
+
+```
+Both are equivalent:
+ -  constructor(private elementRef: ElementRef) { }
+ -  private elementRef: ElementRef;
+
+    constructor(elementRef: ElementRef) {
+      this.elementRef = elementRef;
+    }
+```
+
+- accessing dom problem
+
+```
+# Direct DOM manipulation like elementRef.nativeElement.style will only work in a browser environment.
+use this.renderer.setStyle(this.elRef.nativeElement, 'background-color', 'blue'); instead of this.elementRef.nativeElement.style.backgroundColor = 'blue';
+
+# get the value is good, but setting directly is not suggest using elementRef
+```
+
+- hostListener (listen events)
+
+```
+export class BetterHighlightDirective implements OnInit {
+  @Input() defaultColor: string = 'transparent';
+  @Input() highlightColor: string = 'blue';
+
+  constructor(private elRef: ElementRef, private renderer: Renderer2) { }
+
+  ngOnInit() {
+    this.renderer.setStyle(this.elRef.nativeElement, 'background-color', 'blue');
+  }
+
+  @HostListener('mouseenter') mouseover(eventData: Event) {
+    this.renderer.setStyle(this.elRef.nativeElement, 'background-color', 'blue');
+
+  }
+
+  @HostListener('mouseleave') mouseleave(eventData: Event) {
+    this.renderer.setStyle(this.elRef.nativeElement, 'background-color', 'transparent');
+  }
+
+}
+```
+
+- replacing rendering using @HostBinding (just like renderer, angular will deal the binding in its background)
+- bind property and attributes
+
+```
+
+### better-highlight.directive.ts ###
+
+export class BetterHighlightDirective implements OnInit {
+  @Input() defaultColor: string = 'transparent';
+  @Input() highlightColor: string = 'blue';
+  @HostBinding('style.backgroundColor') backgroundColor: string;
+
+  constructor(private elRef: ElementRef, private renderer: Renderer2) { }
+
+  ngOnInit() {
+    this.backgroundColor = this.defaultColor;
+  }
+
+  @HostListener('mouseenter') mouseover(eventData: Event) {
+    this.backgroundColor = this.highlightColor;
+  }
+}
+```
+
+- Determine whether is property binding or not? (Answer:yes)
+
+```
+defaultColor="yellow"
+```
+
+- @hostListner vs @Output and Event Binding(let parent component to control the behavior.):
+
+```
+@HostListener('mouseenter') mouseover(eventData: Event) {
+  this.renderer.setStyle(this.elRef.nativeElement, 'background-color', 'blue');
+}
+
+vs
+
+@Output() mouseEnterEvent = new EventEmitter<void>();
+
+@HostListener('mouseenter') onMouseEnter() {
+  this.mouseEnterEvent.emit();
+}
+
+```
+
+- attribute directive like ngClass with a value
+
+```
+      <p appBetterHighlight [highlightColor]="'red'" [defaultColor]="'yellow'">
+        Style me with a better directive!
+      </p>
+
+      with
+      @Input() highlightColor: string = 'blue';
+
+
+      vs
+
+      <p [appBetterHighlight]="'red'" [defaultColor]="'yellow'">
+        Style me with a better directive!
+      </p>
+
+      with
+
+      @Input('appBetterHighlight') highlightColor: string = 'blue';
+
+```
+
+- Create custom strucutral directive
+
+```
+### direcitve.ts ###
+
+@Directive({
+  selector: '[appUnless]',
+})
+export class UnlessDirective {
+  @Input() set appUnless(condition: boolean) {
+    if (!condition) {
+      this.vcRef.createEmbeddedView(this.templateRef);
+    } else {
+      this.vcRef.clear();
+    }
+  }
+
+  constructor(
+    private templateRef: TemplateRef<any>,
+    private vcRef: ViewContainerRef
+  ) {}
+}
+
+### html ###
+
+<div *appUnless="onlyOdd">
+  <li
+    class="list-group-item"
+    [ngClass]="{ odd: even % 2 !== 0 }"
+    [ngStyle]="{
+      backgroundColor: even % 2 !== 0 ? 'yellow' : 'transparent'
+    }"
+    *ngFor="let even of evenNumbers"
+  >
+    {{ even }}
+  </li>
+</div>
+
+```
+
+# Chap5
+
+- service is about centralize
+- Basics (logging service)
+
+```
+### logging.service.ts ###
+export class LoggingService {
+  logStatusChange(status: string) {
+    console.log('A server status changed, new status: ' + status);
+  }
+}
+
+### new-account.component.ts ###
+@Component({
+  selector: 'app-new-account',
+  templateUrl: './new-account.component.html',
+  styleUrls: ['./new-account.component.css'],
+  providers: [LoggingService],
+})
+export class NewAccountComponent {
+  constructor(private loggingService: LoggingService) {}
+  onCreateAccount(accountName: string, accountStatus: string) {
+    this.accountAdded.emit({
+      name: accountName,
+      status: accountStatus,
+    });
+    this.loggingService.logStatusChange(accountStatus);
+  }
+}
+
+```
+
+- Basics (Data service)
+
+```
+
+### account.service.ts ###
+export class AccountsService {
+  accounts = [
+    {
+      name: 'Master Account',
+      status: 'active',
+    },
+    {
+      name: 'Testaccount',
+      status: 'inactive',
+    },
+    {
+      name: 'Hidden Account',
+      status: 'unknown',
+    },
+  ];
+
+  addAccount(name: string, status: string) {
+    this.accounts.push({ name, status });
+  }
+
+  updateStatus(id: number, status: string) {
+    this.accounts[id].status = status;
+  }
+}
+
+### app.component.ts ### (the instance is for all child component only when using app component)
+@Component({
+  selector: 'app-root',
+  templateUrl: './app.component.html',
+  styleUrls: ['./app.component.css'],
+  providers: [AccountsService],
+})
+export class AppComponent implements OnInit {
+  accounts: { name: string; status: string }[] = [];
+  constructor(private accountsService: AccountsService) {}
+  ngOnInit() {
+    this.accounts = this.accountsService.accounts;
+  }
+}
+
+
+### new-account.component.ts ### (no AccountsService in providers)
+import { Component, EventEmitter, Output } from '@angular/core';
+import { LoggingService } from '../logging.service';
+import { AccountsService } from '../accounts.service';
+
+@Component({
+  selector: 'app-new-account',
+  templateUrl: './new-account.component.html',
+  styleUrls: ['./new-account.component.css'],
+  providers: [LoggingService],
+})
+export class NewAccountComponent {
+  constructor(
+    private loggingService: LoggingService,
+    private accountsService: AccountsService
+  ) {}
+
+  onCreateAccount(accountName: string, accountStatus: string) {
+    this.accountsService.addAccount(accountName, accountStatus);
+    this.loggingService.logStatusChange(accountStatus);
+  }
+}
+
+```
+
+- Injecting a service to a service
+
+```
+@Injectable() // injectable (loggingService)
+export class AccountsService {
+  accounts = [
+    {
+      name: 'Master Account',
+      status: 'active',
+    }
+  ];
+
+  constructor(private loggingService: LoggingService) {}
+
+  addAccount(name: string, status: string) {
+    this.accounts.push({ name, status });
+    this.loggingService.logStatusChange(status);
+  }
+
+  updateStatus(id: number, status: string) {
+    this.accounts[id].status = status;
+    this.loggingService.logStatusChange(status);
+  }
+```
+
+- cross component injection with service and EventEmitter
+
+```
+
+### accounts.service.ts ###
+@Injectable()
+export class AccountsService {
+  accounts = [
+    {
+      name: 'Master Account',
+      status: 'active',
+    }
+  ];
+
+  statusUpdated = new EventEmitter<string>();
+
+  constructor(private loggingService: LoggingService) {}
+
+  addAccount(name: string, status: string) {
+    this.accounts.push({ name, status });
+    this.loggingService.logStatusChange(status);
+  }
+
+  updateStatus(id: number, status: string) {
+    this.accounts[id].status = status;
+    this.loggingService.logStatusChange(status);
+  }
+}
+
+### account.component.ts ###
+export class AccountComponent {
+  onSetTo(status: string) {
+    this.accountService.updateStatus(this.id, status);
+    // this.loggingService.logStatusChange(status);
+    this.accountService.statusUpdated.emit(status);
+  }
+}
+
+### new-account.component.ts ###
+export class NewAccountComponent {
+  constructor(
+    private accountsService: AccountsService
+  ) {
+    this.accountsService.statusUpdated.subscribe((status: string) =>
+      alert('New status: ' + status)
+    );
+  }
+  onCreateAccount(accountName: string, accountStatus: string) {
+    this.accountsService.addAccount(accountName, accountStatus);
+
+  }
+}
+
+
+## another solution: @Injectable({ providedIn: 'root' }) to all services and no providers in app.module.ts
 ```

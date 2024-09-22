@@ -4,3 +4,15 @@ introduction/.angular
 recipe/node_modules
 recipe/.vscode
 recipe/.angular
+cmp-databinding-start/node_modules
+cmp-databinding-start/.vscode
+cmp-databinding-start/.angular
+directive/node_modules
+directive/.vscode
+directive/.angular
+serviceExample/node_modules
+serviceExample/.vscode
+serviceExample/.angular
+serviceExampleProject/node_modules
+serviceExampleProject/.vscode
+serviceExampleProject/.angular
