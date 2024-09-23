@@ -198,3 +198,39 @@ e.g.
       (window:resize)="collapsed = true"
     >
 ```
+
+- flow
+
+```
+1. header
+2. model->create the view
+```
+
+- typescript shortcut
+
+```
+export class Ingredient {
+  constructor(public name: string, public amount: number) {}
+}
+
+export class Ingredient {
+  public name:string;
+  public amount:number;
+
+  constructor(name: string, amount: number) {
+    this.name = name
+    this.amount = amount
+  }
+}
+
+
+```
+
+- form control example
+
+```
+  <div class="col-sm-2 form-group">
+    <label for="amount">Amount</label>
+    <input type="number" id="amount" class="form-control" />
+  </div>
+```
