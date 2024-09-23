@@ -16,3 +16,6 @@ serviceExample/.angular
 serviceExampleProject/node_modules
 serviceExampleProject/.vscode
 serviceExampleProject/.angular
+routingExample/node_modules
+routingExample/.vscode
+routingExample/.angular

@@ -727,4 +727,318 @@ export class NewAccountComponent {
 ## another solution: @Injectable({ providedIn: 'root' }) to all services and no providers in app.module.ts
 ```
 
-- review 439
+- pushing data methods: 1.directly 2. new EventEmitter
+
+```
+export class ShoppingListService {
+  ingredientsChanged = new EventEmitter<Ingredient[]>();
+  private ingredients: Ingredient[] = [
+    new Ingredient('Apples', 5),
+    new Ingredient('Tomatoes', 10),
+  ];
+
+  getIngredients() {
+    // return this.ingredients; //ok
+    return this.ingredients.slice(); // work with copy array
+  }
+
+  addIngredient(ingredient: Ingredient) {
+    // this.ingredients.push(ingredient); //ok
+    this.ingredients.push(ingredient);
+    this.ingredientsChanged.emit(this.ingredients.slice());
+  }
+
+  addIngredients(ingredients: Ingredient[]) {
+
+    this.ingredients.push(...ingredients);
+    this.ingredientsChanged.emit(this.ingredients.slice());
+    console.log(this.ingredients);
+  }
+}
+```
+
+# Chap6
+
+- Setting routers basic
+
+```
+### app.module.ts ###
+
+// create app_routes
+const appRoutes: Routes = [
+  { path: '', component: HomeComponent },
+  {
+    path: 'users',
+    component: UsersComponent,
+  },
+  {
+    path: 'servers',
+    component: ServersComponent,
+  },
+];
+
+// import RouteModule
+imports: [BrowserModule, FormsModule, RouterModule.forRoot(appRoutes)],
+
+### app.component.html ###
+<router-outlet></router-outlet>
+```
+
+- Navigating with Router Links (routerLink prevent the default of sending request to the server,thus no refresh occurs)
+- why /? ans: absolute path
+- e.g. relative path: ./server ,server
+
+```
+    <li role="presentation"><a routerLink="/servers">Servers</a></li>
+    <li role="presentation"><a [routerLink]="['/users']">Users</a></li>
+```
+
+- Styling Active Router Links
+
+```
+<li
+  role="presentation"
+  routerLinkActive="active"
+  [routerLinkActiveOptions]="{ exact: true }"
+>
+  <a routerLink="/">Home</a>
+</li>
+<li role="presentation" routerLinkActive="active">
+  <a routerLink="/servers">Servers</a>
+</li>
+<li role="presentation" routerLinkActive="active">
+  <a [routerLink]="['/users']">Users</a>
+</li>
+```
+
+- Navigating Programmatically
+
+```
+### home.component.html ####
+<button class="btn btn-primary" (click)="onLoadServers()">Load Server</button>
+
+### home.component.ts### (import router)
+export class HomeComponent implements OnInit {
+  constructor(private router: Router) {}
+
+  ngOnInit() {}
+
+  onLoadServers() {
+    this.router.navigate(['/servers']);
+  }
+}
+```
+
+- this.router.navigate does not recoginize relative path
+- import ActivatedRoute
+
+```
+  constructor(
+    private serversService: ServersService,
+    private router: Router,
+    private route: ActivatedRoute
+  ) {}
+
+  onReload() {
+    <!-- this.router.navigate(['/servers'], { relativeTo: this.route }); -->
+  }
+```
+
+- getting parameters from route (route parameter)
+
+```
+### app.module.ts ###
+const appRoutes: Routes = [
+  {
+    path: 'users/:id/:name',
+    component: UserComponent,
+  },
+];
+
+### user.component.ts ###
+@Component({
+  selector: 'app-user',
+  templateUrl: './user.component.html',
+  styleUrls: ['./user.component.css'],
+})
+export class UserComponent implements OnInit {
+  user: { id: number; name: string };
+
+  constructor(private route: ActivatedRoute) {}
+
+  ngOnInit() {
+    this.user = {
+      id: this.route.snapshot.params['id'],
+      name: this.route.snapshot.params['name'],
+    };
+  }
+}
+```
+
+- async tasks: subscribing to something that might happen in the future, and once that event occurs, a piece of code will execute in response.
+- observables work with async tasks
+- if we are in the same component , the route will not work
+- this.route.params is a observables
+
+```
+export class UserComponent implements OnInit {
+  user: { id: number; name: string };
+
+  constructor(private route: ActivatedRoute) {}
+
+  ngOnInit() {
+    this.user = {
+      id: this.route.snapshot.params['id'],
+      name: this.route.snapshot.params['name'],
+    };
+    this.route.params.subscribe((params: Params) => {
+      this.user.id = params['id'];
+      this.user.name = params['name'];
+    });
+  }
+}
+```
+
+- Delete subscription
+- add paramsSubscription: Subscription
+
+```
+export class UserComponent implements OnInit, OnDestroy {
+  user: { id: number; name: string };
+  paramsSubscription: Subscription;
+
+  constructor(private route: ActivatedRoute) {}
+
+  ngOnInit() {
+    this.user = {
+      id: this.route.snapshot.params['id'],
+      name: this.route.snapshot.params['name'],
+    };
+    this.paramsSubscription = this.route.params.subscribe((params: Params) => {
+      this.user.id = params['id'];
+      this.user.name = params['name'];
+    });
+  }
+
+  ngOnDestroy() {
+    this.paramsSubscription.unsubscribe();
+  }
+}
+```
+
+- passing query parameters and navigating programmatically
+
+```
+### servers.component.html ###
+<a
+  [routerLink]="['/servers', 5, 'edit']"
+  [queryParama]="{ allowEdit: '1' }"
+  fragment="loading"
+  class="list-group-item"
+  *ngFor="let server of servers"
+>
+  {{ server.name }}
+</a>
+
+<hr>
+
+### home.component.html ###
+
+<button class="btn btn-primary" (click)="onLoadServers(1)">Load Server</button>
+
+### home.component.ts ###
+
+export class HomeComponent implements OnInit {
+  constructor(private router: Router) {}
+
+  ngOnInit() {}
+
+  onLoadServers(id: number) {
+    this.router.navigate(['/servers', id, 'edit'], {
+      queryParams: { allowEdit: '1' },
+      fragment: 'loading',
+    });
+  }
+}
+
+```
+
+- getting parameters from route (query parameter)
+
+```
+    ### edit-server.component.ts ###
+    console.log(this.route.snapshot.queryParams);
+    console.log(this.route.snapshot.fragment);
+    this.route.queryParams.subscribe();
+    this.route.fragment.subscribe();
+```
+
+- nested routes basics
+
+```
+
+### app.modules.ts ###
+const appRoutes: Routes = [
+  { path: '', component: HomeComponent },
+  {
+    path: 'users',
+    component: UsersComponent,
+    children: [
+      {
+        path: ':id/:name',
+        component: UserComponent,
+      },
+    ],
+  },
+]
+
+### users.component.ts ###
+add <router-outlet><router-outlet/>
+```
+
+- queryParams preserve
+
+```
+### server.component.ts### (navigating programmatically)
+  onEdit() {
+    this.router.navigate(['edit'], {
+      relativeTo: this.route,
+      queryParamsHandling: 'preserve',
+    });
+  }
+
+### edit-server.component.ts ### (allowEdit=false)
+export class EditServerComponent implements OnInit {
+  server: { id: number; name: string; status: string };
+  serverName = '';
+  serverStatus = '';
+  allowEdit = false;
+
+  constructor(
+    private route: ActivatedRoute,
+    private serversService: ServersService
+  ) {}
+
+  ngOnInit() {
+    console.log(this.route.snapshot.queryParams);
+    console.log(this.route.snapshot.fragment);
+    this.route.queryParams.subscribe((queryParams: Params) => {
+      console.log('sds', queryParams['allowEdit']);
+      this.allowEdit = queryParams['allowEdit'] === '1' ? true : false;
+    });
+    this.route.fragment.subscribe();
+    this.server = this.serversService.getServer(1);
+    this.serverName = this.server.name;
+    this.serverStatus = this.server.status;
+  }
+
+  onUpdateServer() {
+    this.serversService.updateServer(this.server.id, {
+      name: this.serverName,
+      status: this.serverStatus,
+    });
+  }
+}
+```
+
+- next 460
