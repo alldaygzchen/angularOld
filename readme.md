@@ -1041,4 +1041,21 @@ export class EditServerComponent implements OnInit {
 }
 ```
 
-- next 460
+- redirecting and wildcard Routes
+- path matching with component vs redirect
+- the difference is that components allow for more specific matching, while redirects tend to match everything starting with the given path, unless you explicitly tell them to match fully.
+
+```
+const appRoutes: Routes = [ ...
+  {
+    path: 'not-found',
+    component: PageNotFoundComponent,
+  },
+  {
+    path: '**',
+    redirectTo: '/not-found',
+  },
+];
+```
+
+- 463
