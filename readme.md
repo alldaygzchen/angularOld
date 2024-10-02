@@ -264,7 +264,7 @@ e.g.
 
 ```
 
-- Angular gives same attribute to all elements in a component to enforce style encapsulation
+- Angular gives same attribute to all elements in a component to enforce style encapsulation (F12)
 
 ```
 @Component({
@@ -295,6 +295,7 @@ e.g.
 ```
 
 - access local reference in typescript using @ViewChild()
+- @ViewChild is a decorator that allows you to access a child component, directive, or DOM element from a parent component.
 
 ```
 ### html ###
@@ -351,7 +352,7 @@ outside of ngOnInit(): {static: false}  default
 
 ```
 init phase: constructor -> ngOnChanges -> ngOnInit -> ngDoCheck -> ngAfterContent-> ngAfterContentChecked -> ngAfterViewInint-> ngAfterViewChecked
-change phase: ngOnChanges -> ngDoCheck -> ngAfterContentChecked -> ngAfterContentChecked
+change phase: ngOnChanges -> ngDoCheck -> ngAfterContentChecked -> ngAfterViewChecked
 ```
 
 - Besides ViewChild, there is also ContentChild in component.ts
@@ -502,6 +503,8 @@ vs
 ```
 
 - Create custom strucutral directive
+- TemplateRef: Refers to the template (HTML content) you want to insert.
+- ViewContainerRef: Refers to the place in the DOM where the template will be inserted or removed.
 
 ```
 ### direcitve.ts ###
@@ -671,6 +674,7 @@ export class AccountsService {
 ```
 
 - cross component injection with service and EventEmitter
+- even it is global, changes to the properties of the service won't automatically trigger re-rendering of components that use it.
 
 ```
 
@@ -727,7 +731,7 @@ export class NewAccountComponent {
 ## another solution: @Injectable({ providedIn: 'root' }) to all services and no providers in app.module.ts
 ```
 
-- pushing data methods: 1.directly 2. new EventEmitter
+- pushing data methods: 1.directly 2. new EventEmitter (sometimes you do not want to directly update original value)
 
 ```
 export class ShoppingListService {
@@ -756,6 +760,8 @@ export class ShoppingListService {
   }
 }
 ```
+
+- functions of getting properties of services should be called in the correct component
 
 # Chap6
 
@@ -1058,4 +1064,282 @@ const appRoutes: Routes = [ ...
 ];
 ```
 
-- 463
+- app-routing.module.ts
+
+```
+### app.module.ts ###
+@NgModule({
+  declarations: [
+    AppComponent,
+    HomeComponent,
+    UsersComponent,
+    ServersComponent,
+    UserComponent,
+    EditServerComponent,
+    ServerComponent,
+    PageNotFoundComponent,
+  ],
+  imports: [BrowserModule, FormsModule, AppRoutingModule], // load AppRoutingModule
+  providers: [ServersService],
+  bootstrap: [AppComponent],
+})
+export class AppModule {}
+
+### app-routing.module.ts ###
+@NgModule({
+  imports: [RouterModule.forRoot(appRoutes)],
+  exports: [RouterModule], // config RouterModule
+})
+export class AppRoutingModule {}
+
+```
+
+- route accessing guard
+- protecting routes with guard (whole route)
+- login logic in service
+- the auth guard will be failed if insert by url (this may be fix in the later course)
+
+```
+1. Create ### auth.service.ts ###
+2. Create ### auth-guard.service.ts ### with canActivate
+
+@Injectable()
+export class AuthGuard implements CanActivate {
+  constructor(private authService: AuthService, private router: Router) {}
+
+  canActivate(
+    route: ActivatedRouteSnapshot,
+    state: RouterStateSnapshot
+  ): Observable<boolean> | Promise<boolean> | boolean {
+    return this.authService.isAuthenticated().then((authenticated: boolean) => {
+      if (authenticated) {
+        return true;
+      } else {
+        this.router.navigate(['/']);
+        return false;
+      }
+    });
+  }
+
+3. Add AuthGuard in ### app.module.ts ###
+
+{
+  path: 'servers',
+  canActivate: [AuthGuard],
+  component: ServersComponent,
+  children: [
+    {
+      path: ':id',
+      component: ServerComponent,
+    },
+    {
+      path: ':id/edit',
+      component: EditServerComponent,
+    },
+  ],
+},
+4. Add services in providers ### app.module.ts###
+providers: [ServersService, AuthService, AuthGuard],
+
+```
+
+- only child routes protected (child routes)
+
+```
+### auth-guard.service.ts ###
+ canActivateChild(
+    route: ActivatedRouteSnapshot,
+    state: RouterStateSnapshot
+  ): Observable<boolean> | Promise<boolean> | boolean {
+    return this.canActivate(route, state);
+  }
+
+### app-routing.module.ts ###
+{
+  path: 'servers',
+  canActivateChild: [AuthGuard],
+  component: ServersComponent,
+  children: [
+    {
+      path: ':id',
+      component: ServerComponent,
+    },
+    {
+      path: ':id/edit',
+      component: EditServerComponent,
+    },
+  ],
+},
+```
+
+- route deactive guard
+- deactivate logic in the component
+
+```
+### app.module.ts ###
+
+providers: [ServersService, AuthService, AuthGuard, CanDeactivateGuard],
+
+### can-deactive-guard.service.ts ###
+
+export interface CanComponentDeactivate {
+  canDeactivate: () => Observable<boolean> | Promise<boolean> | boolean;
+}
+
+export class CanDeactivateGuard
+  implements CanDeactivate<CanComponentDeactivate>
+{
+  canDeactivate(
+    component: CanComponentDeactivate,
+    currentRoute: ActivatedRouteSnapshot,
+    currentState: RouterStateSnapshot,
+    nextState?: RouterStateSnapshot
+  ): Observable<boolean> | Promise<boolean> | boolean {
+    return component.canDeactivate();
+  }
+}
+
+### app-routing.module.ts ###
+{
+  path: 'servers',
+  canActivateChild: [AuthGuard],
+  component: ServersComponent,
+  children: [
+    {
+      path: ':id',
+      component: ServerComponent,
+    },
+    {
+      path: ':id/edit',
+      component: EditServerComponent,
+      canDeactivate: [CanDeactivateGuard],
+    },
+  ],
+},
+
+### edit-server.component.ts ###
+
+canDeactivate(): Observable<boolean> | Promise<boolean> | boolean {
+  if (!this.allowEdit) {
+    return true;
+  }
+  if (
+    (this.serverName !== this.server.name ||
+      this.serverStatus !== this.server.status) &&
+    !this.changesSaved
+  ) {
+    return confirm('Do you want to discard the changes?');
+  } else {
+    return true;
+  }
+}
+```
+
+- Passing static data through route
+
+```
+### app-routing.module.ts ###
+{
+  path: 'not-found',
+  component: ErrorPageComponent,
+  data: { message: 'Page not found!' },
+},
+
+
+### error-page.component.ts ###
+export class ErrorPageComponent implements OnInit {
+  errorMessage: string;
+
+  constructor(private route: ActivatedRoute) {}
+
+  ngOnInit() {
+    // this.errorMessage = this.route.snapshot.data['message'];
+    this.route.data.subscribe((data: Data) => {
+      this.errorMessage = data['message'];
+    });
+  }
+  }
+```
+
+- resolver: run code before a route is render
+- the alternative method is to load in the OnInit method
+- the resolver will always run when rerendering unlike component need to subscribe
+- passing dynamic data through route
+
+```
+### app.module.ts ###
+  providers: [ServersService,AuthService,AuthGuard,CanDeactivateGuard,ServerResolver,],
+
+### app.routing.modules.ts ###
+  {
+    path: 'servers',
+    canActivateChild: [AuthGuard],
+    component: ServersComponent,
+    children: [
+      {
+        path: ':id',
+        component: ServerComponent,
+        resolve: { server: ServerResolver },
+      },
+      {
+        path: ':id/edit',
+        component: EditServerComponent,
+        canDeactivate: [CanDeactivateGuard],
+      },
+    ],
+  },
+
+### server-resolver.service.ts ###
+interface Server {
+  id: number;
+  name: string;
+  status: string;
+}
+
+@Injectable()
+export class ServerResolver implements Resolve<Server> {
+  constructor(private serversService: ServersService) {}
+
+  resolve(
+    route: ActivatedRouteSnapshot,
+    state: RouterStateSnapshot
+  ): Observable<Server> | Promise<Server> | Server {
+    return this.serversService.getServer(+route.params['id']);
+  }
+}
+
+### server.component.ts ###
+  ngOnInit() {
+    this.route.data.subscribe((data: Data) => {
+      this.server = data['server'];
+    });
+    //   const id = +this.route.snapshot.params['id'];
+    //   this.server = this.serversService.getServer(id);
+    //   this.route.params.subscribe((params: Params) => {
+    //     this.server = this.serversService.getServer(+params['id']);
+    //   });
+  }
+```
+
+- services: logging, data, auth-guard, can-deactivate-guard, resolver
+- The server has to be configured in a way that it serves the index.html instead of a 404 page in each case an unknown url is requested, so that Angular's router can handle the correct routing
+
+```
+// Fallback to index.html for unknown routes using express
+app.get('/*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../dist/angular-app/index.html'));
+});
+```
+
+- Angular route observable clean out by default
+- Angular change detection mechanism, Zone js and service thoughts
+- Angular change detection mechanism is only suitable for @Input decorator, @Output decorator and DOM events
+
+```
+1. zone.js detects an event (like an API response)
+2. Angular starts change detection at the root (AppComponent)
+3. Angular checks each child component in the tree
+4. If it finds a change, it updates the UI for that component
+5. If no observable and event triggers,changes to a service's property  (even in a component-specific service)  may not be reflected in the UI.
+
+```
