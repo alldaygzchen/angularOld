@@ -1,4 +1,5 @@
 https://github.com/juanpetterson/angular-the-complete-guide
+https://www.concretepage.com/angular/
 
 # Chap 1: Intro
 
@@ -1343,3 +1344,696 @@ app.get('/*', (req, res) => {
 5. If no observable and event triggers,changes to a service's property  (even in a component-specific service)  may not be reflected in the UI.
 
 ```
+
+# Chap7
+
+- observable: data source from Events, Http requests ....
+- observer: the subscribe code where we receive data, receive error and receive completion(not always complete such as interval)
+- observable are just alternative methids such as callback and promises
+
+- observable basics (delete subscription when leaving the component)
+
+```
+@Component({
+  selector: 'app-home',
+  templateUrl: './home.component.html',
+  styleUrls: ['./home.component.css'],
+})
+export class HomeComponent implements OnInit, OnDestroy {
+  private firstObsSubscription: Subscription;
+  constructor() {}
+
+  ngOnInit() {
+    this.firstObsSubscription = interval(1000).subscribe((count) => {
+      console.log(count);
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.firstObsSubscription.unsubscribe();
+  }
+}
+
+```
+
+- custom observable
+
+```
+export class HomeComponent implements OnInit, OnDestroy {
+  private firstObsSubscription: Subscription;
+  constructor() {}
+
+  ngOnInit() {
+    const customIntervalObservable = new Observable<number>((observer) => {
+      let count = 0;
+      setInterval(() => {
+        observer.next(count);
+        count++;
+      }, 1000);
+    });
+
+    this.firstObsSubscription = customIntervalObservable.subscribe((data) => {
+      console.log(data);
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.firstObsSubscription.unsubscribe();
+  }
+}
+```
+
+- custom errors and completions
+- possible outputs: next or next and errors or next and completions
+
+```
+  ngOnInit() {
+    const customIntervalObservable = new Observable<number>((observer) => {
+      let count = 0;
+      setInterval(() => {
+        observer.next(count);
+        if (count === 2) {
+          observer.complete();
+        }
+        if (count > 3) {
+          observer.error(new Error('count is greater than 3'));
+        }
+        count++;
+      }, 1000);
+    });
+
+    this.firstObsSubscription = customIntervalObservable.subscribe(
+      (data) => {
+        console.log('subscription data:', data);
+      },
+      (error) => {
+        console.log(error);
+        alert(error.message);
+      },
+      () => {
+        console.log('completed');
+      }
+    );
+  }
+
+  ngOnDestroy(): void {
+    this.firstObsSubscription.unsubscribe();
+  }
+}
+```
+
+- operators in rxjs (data processing)
+- runs before subscription
+
+```
+    this.firstObsSubscription = customIntervalObservable
+      .pipe(
+        filter((data) => {
+          return data > 0;
+        }),
+        map((data: number) => {
+          return 'Round: ' + (data + 1);
+        })
+      )
+      .subscribe(
+        (data) => {
+          console.log('subscription data:', data);
+        },
+        (error) => {
+          console.log(error);
+          alert(error.message);
+        },
+        () => {
+          console.log('completed');
+        }
+      );
+```
+
+- review
+
+```
+### user.service.ts ###
+
+@Injectable({ providedIn: 'root' })
+export class UserService {
+  activatedEmitter = new EventEmitter<boolean>();
+}
+
+### user.component.ts ###
+export class UserComponent implements OnInit {
+
+  constructor(
+    private route: ActivatedRoute,
+    private userService: UserService
+  ) {}
+
+  onActivate() {
+    this.userService.activatedEmitter.emit(true);
+  }
+}
+
+### user.component.html ###
+<button class="btn btn-primary" (click)="onActivate()">Activate</button>
+
+### app.component.ts ###
+export class AppComponent implements OnInit {
+  userActivated = false;
+  constructor(private userService: UserService) {}
+
+  ngOnInit() {
+    this.userService.activatedEmitter.subscribe((didActivate) => {
+      this.userActivated = didActivate;
+    });
+  }
+}
+### app.component.html ###
+<p *ngIf="userActivated">Activated</p>
+
+```
+
+- replace using rxjs subject
+- subject vs event emitter
+- subject is a kind of observable since it has next method
+- difference: observable wraps callback, or event or something and next method is inside but the next method in subject can be called outside
+- use subject instead of eventEmitter(observables)
+
+```
+### user.service.ts ###
+@Injectable({ providedIn: 'root' })
+export class UserService {
+  activatedEmitter = new Subject<boolean>();
+}
+
+### user.component.ts ###
+export class UserComponent implements OnInit {
+
+  constructor(
+    private route: ActivatedRoute,
+    private userService: UserService
+  ) {}
+
+  onActivate() {
+    this.userService.activatedEmitter.next(true);
+  }
+}
+
+### user.component.html ###
+<button class="btn btn-primary" (click)="onActivate()">Activate</button>
+
+### app.component.ts ###
+export class AppComponent implements OnInit {
+  userActivated = false;
+  constructor(private userService: UserService) {}
+
+  ngOnInit() {
+    this.userService.activatedEmitter.subscribe((didActivate) => {
+      this.userActivated = didActivate;
+    });
+  }
+}
+### app.component.html ###
+<p *ngIf="userActivated">Activated</p>
+```
+
+# Chap8
+
+- basics html
+- the for attribute should be used on the <label> element with the same value as the input’s id.
+
+```
+
+<label for="email">Email:</label>
+<input type="email" id="email" name="email">
+```
+
+```
+form > form group > form control
+```
+
+## Template Driven
+
+```
+- make sure import FormsModule in app.module.ts
+- it will create a js form representation when it detect form html tag
+- we should manually tell what the form representation looks like
+```
+
+- basics
+- ngModel without binding
+
+```
+### app.component.html ### [(ngSubmit)="onSubmit(f)" #f="ngForm" && ngModel name="username"]
+
+<form (ngSubmit)="onSubmit(f)" #f="ngForm">
+  <div id="user-data">
+    <div class="form-group">
+      <label for="username">Username</label>
+      <input
+        type="text"
+        id="username"
+        class="form-control"
+        ngModel
+        name="username"
+      />
+    </div>
+<form/>
+
+### app.component.ts ###
+export class AppComponent {
+  suggestUserName() {
+    const suggestedName = 'Superuser';
+  }
+  onSubmit(form: NgForm) {
+    console.log('Submitted');
+    console.log(form);
+  }
+}
+```
+
+```
+properties: dirty(inserting value), disable, invlaid, touched(cursor activated)
+```
+
+- using viewChild can checked before submit
+
+```
+### app.component.html ###
+<form (ngSubmit)="onSubmit()" #f="ngForm">
+  <div id="user-data">
+    <div class="form-group">
+      <label for="username">Username</label>
+      <input
+        type="text"
+        id="username"
+        class="form-control"
+        ngModel
+        name="username"
+      />
+    </div>
+<form/>
+
+### app.component.ts ###
+export class AppComponent {
+  @ViewChild('f') signupForm: NgForm;
+  suggestUserName() {
+    const suggestedName = 'Superuser';
+  }
+  onSubmit() {
+    console.log('Submitted');
+    console.log(this.signupForm);
+  }
+}
+```
+
+- adding validation (is not a directive)
+- https://v17.angular.io/api/forms/Validators (mix,max,required...)
+
+```
+### app.component.html ###
+<div class="form-group">
+  <label for="email">Mail</label>
+  <input
+    type="email"
+    id="email"
+    class="form-control"
+    ngModel
+    name="email"
+    required
+    email
+  />
+</div>
+```
+
+- form state
+
+```
+### app.component.html ###
+<button class="btn btn-primary" type="submit" [disabled]="!f.valid">
+  Submit
+</button>
+
+### app.component.css ###z
+input.ng-invalid.ng-touched {
+  border: 1px solid red;
+}
+```
+
+- Outputting validation error messages
+
+```
+<div class="form-group">
+  <label for="email">Mail</label>
+  <input
+    type="email"
+    id="email"
+    class="form-control"
+    ngModel
+    name="email"
+    required
+    email
+    #email="ngModel"
+  />
+  <span class="help-block" *ngIf="!email.valid && email.touched"
+    >Please enter a valid email</span
+  >
+</div>
+```
+
+- one way binding to set default values
+
+```
+### app.component.html ###
+<div class="form-group">
+  <label for="secret">Secret Questions</label>
+  <select
+    id="secret"
+    class="form-control"
+    [ngModel]="defaultQuestion"
+    name="secret"
+  >
+    <option value="pet">Your first Pet?</option>
+    <option value="teacher">Your first teacher?</option>
+  </select>
+</div>
+```
+
+- two way binding
+
+```
+### app.component.html ###
+<div class="form-group">
+  <textarea
+    name="questionAnswer"
+    rows="3"
+    [(ngModel)]="answer"
+    class="form-control"
+  ></textarea>
+</div>
+<p>Your reply: {{ answer }}</p>
+```
+
+- Grouping form controls
+
+```
+### app.component.html ###
+  <div id="user-data" ngModelGroup="userData" #userData="ngModelGroup">
+    <div class="form-group">
+      <label for="username">Username</label>
+      <input
+        type="text"
+        id="username"
+        class="form-control"
+        ngModel !!!!!!control!!!!!!
+        name="username" !!!!!!property name!!!!!!
+        required
+      />
+    </div>
+    <button class="btn btn-default" type="button">
+      Suggest an Username
+    </button>
+    <div class="form-group">
+      <label for="email">Mail</label>
+      <input
+        type="email"
+        id="email"
+        class="form-control"
+        ngModel
+        name="email"
+        required
+        email
+        #email="ngModel" !!!!!!template variable!!!!!!
+      />
+      <span class="help-block" *ngIf="!email.valid && email.touched"
+        >Please enter a valid email</span
+      >
+    </div>
+  </div>
+  <p *ngIf="!userData.valid && userData.touched">User Data is invalid</p>
+```
+
+- radio button
+
+```
+### app.component.html ###
+  <div class="radio" *ngFor="let gender of genders">
+    <label>
+      <input
+        type="radio"
+        name="gender"
+        ngmodel
+        [value]="gender"
+        required
+      />{{ gender }}
+    </label>
+  </div>
+```
+
+- setting data by events (patch values and set values)
+
+```
+### app.component.html ###
+<button
+  class="btn btn-default"
+  type="button"
+  (click)="suggestUserName()"
+>
+  Suggest an Username
+</button>
+
+
+### app.component.ts ###
+suggestUserName() {
+  const suggestedName = 'Superuser';
+  // this.signupForm.setValue({
+  //   userData: {
+  //     username: suggestedName,
+  //     email: '',
+  //   },
+  //   secret: 'pet',
+  //   questionAnswer: '',
+  //   gender: 'male',
+  // });
+  this.signupForm.form.patchValue({
+    userData: {
+      username: suggestedName,
+    },
+  });
+  // this.username = this.testSuggestedName;
+}
+```
+
+- using form data and reset
+
+```
+### app.component.ts ###
+onSubmit() {
+  // console.log(this.signupForm);
+  this.submitted = true;
+  this.user.username = this.signupForm.value.userData.username;
+  this.user.email = this.signupForm.value.userData.username;
+  this.user.secretQuestion = this.signupForm.value.secret;
+  this.user.answer = this.signupForm.value.questionAnswer;
+  this.user.gender = this.signupForm.value.gender;
+  this.signupForm.reset();
+}
+### app.component.html ###
+<div class="row" *ngIf="submitted">
+  <div class="col-xs-12">
+    <h3>Your data</h3>
+    <p>Username:{{ user.username }}</p>
+    <p>Mail:{{ user.email }}</p>
+    <p>Secret Question:{{ user.secretQuestion }}</p>
+    <p>Answer:{{ user.answer }}</p>
+    <p>Gender:{{ user.gender }}</p>
+  </div>
+</div>
+```
+
+## Reactive Form
+
+- remove forModule and replace ReactiveFormsModule
+
+```
+### app.module.ts ###
+@NgModule({
+  declarations: [AppComponent],
+  imports: [BrowserModule, ReactiveFormsModule],
+  providers: [],
+  bootstrap: [AppComponent],
+})
+export class AppModule {}
+```
+
+```
+[formControlName]="'username'" is equivalent to formControlName='username'
+```
+
+- basics
+
+```
+### app.component.ts ###
+
+1. create a instance of FormGroup and FormControl
+
+export class AppComponent implements OnInit {
+  genders = ['male', 'female'];
+  signupForm: FormGroup;
+
+  ngOnInit(): void {
+    this.signupForm = new FormGroup({
+      username: new FormControl(null, Validators.required),
+      email: new FormControl(null, [Validators.required, Validators.email]),
+      gender: new FormControl('male'),
+    });
+  }
+  onSubmit() {
+    console.log(this.signupForm);
+  }
+}
+
+### app.component.html ###
+
+2. synchronize using formGroup and formControlName
+
+<form [formGroup]="signupForm" (ngSubmit)="onSubmit()">
+  <div class="form-group">
+    <label for="username">Username</label>
+    <input
+      type="text"
+      id="username"
+      class="form-control"
+      [formControlName]="'username'"
+    />
+  </div>
+  <div class="form-group">
+    <label for="email">email</label>
+    <input
+      type="text"
+      id="email"
+      class="form-control"
+      formControlName="email"
+    />
+  </div>
+  <div class="radio" *ngFor="let gender of genders">
+    <label>
+      <input type="radio" [value]="gender" formControlName="gender" />{{
+        gender
+      }}
+    </label>
+  </div>
+  <button class="btn btn-primary" type="submit">Submit</button>
+</form>
+```
+
+- getting access to control
+
+```
+### app.component.html ###
+<span
+  class="help-block"
+  *ngIf="
+    !signupForm.get('username').valid &&
+    signupForm.get('username').touched
+  "
+  >Please enter a valid username</span
+>
+```
+
+- Reactive group control
+- formGroupName
+- signupForm.get('userData.username').valid
+
+```
+### app.component.html ###
+<form [formGroup]="signupForm" (ngSubmit)="onSubmit()">
+  <div formGroupName="userData">
+    <div class="form-group">
+      <label for="username">Username</label>
+      <input
+        type="text"
+        id="username"
+        class="form-control"
+        [formControlName]="'username'"
+      />
+      <span
+        class="help-block"
+        *ngIf="
+          !signupForm.get('userData.username').valid &&
+          signupForm.get('userData.username').touched
+        "
+        >Please enter a valid username</span
+      >
+    </div>
+    <div class="form-group">
+      <label for="email">email</label>
+      <input
+        type="text"
+        id="email"
+        class="form-control"
+        formControlName="email"
+      />
+      <span
+        class="help-block"
+        *ngIf="
+          !signupForm.get('userData.email').valid &&
+          signupForm.get('userData.email').touched
+        "
+        >Please enter a valid email</span
+      >
+    </div>
+  </div>
+
+  <div class="radio" *ngFor="let gender of genders">
+    <label>
+      <input type="radio" [value]="gender" formControlName="gender" />{{
+        gender
+      }}
+    </label>
+  </div>
+  <span class="help-block" *ngIf="!signupForm.valid && signupForm.touched"
+    >Please enter a valid data</span
+  >
+  <button class="btn btn-primary" type="submit">Submit</button>
+</form>
+```
+
+- arrays of formcontrol
+
+```
+### app.component.ts###
+ngOnInit(): void {
+  this.signupForm = new FormGroup({
+    userData: new FormGroup({
+      username: new FormControl(null, Validators.required),
+      email: new FormControl(null, [Validators.required, Validators.email]),
+    }),
+    gender: new FormControl('male'),
+    hobbies: new FormArray([]),
+  });
+}
+
+onAddHobby() {
+  const control = new FormControl(null, Validators.required);
+  (<FormArray>this.signupForm.get('hobbies')).push(control);
+}
+getControls() {
+  // return (<FormArray>this.signupForm.get('hobbies')).controls;
+  return (this.signupForm.get('hobbies') as FormArray).controls;
+}
+
+### app.component.html ###
+<div formArrayName="hobbies">
+  <h4>Your hobbies</h4>
+  <button class="btn btn-primary" type="button" (click)="onAddHobby()">
+    Add hobby
+  </button>
+  <div
+    class="form-group"
+    *ngFor="let hobbyControl of getControls(); let i = index"
+  >
+    <input type="text" class="form-control" [formControlName]="i" />
+  </div>
+</div>
+```
+
+- 530
