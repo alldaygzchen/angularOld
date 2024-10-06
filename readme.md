@@ -545,7 +545,7 @@ export class UnlessDirective {
 
 ```
 
-# Chap5
+# Chap5 (Services)
 
 - service is about centralize
 - Basics (logging service)
@@ -608,7 +608,7 @@ export class AccountsService {
   }
 }
 
-### app.component.ts ### (the instance is for all child component only when using app component)
+### app.component.ts ### (the accountsService instance shares for all child component only when it is placed at root level)
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
@@ -624,7 +624,7 @@ export class AppComponent implements OnInit {
 }
 
 
-### new-account.component.ts ### (no AccountsService in providers)
+### new-account.component.ts ### (since accountservice is in the root level, the logging service here is just for this component used)
 import { Component, EventEmitter, Output } from '@angular/core';
 import { LoggingService } from '../logging.service';
 import { AccountsService } from '../accounts.service';
@@ -652,7 +652,7 @@ export class NewAccountComponent {
 - Injecting a service to a service
 
 ```
-@Injectable() // injectable (loggingService)
+@Injectable() // it means the following service is injectable (inject loggingService)
 export class AccountsService {
   accounts = [
     {
@@ -733,6 +733,7 @@ export class NewAccountComponent {
 ```
 
 - pushing data methods: 1.directly 2. new EventEmitter (sometimes you do not want to directly update original value)
+- the addIngredients works (the value is updated in this.ingredients.push(ingredient)) due to event trigger
 
 ```
 export class ShoppingListService {
@@ -762,9 +763,9 @@ export class ShoppingListService {
 }
 ```
 
-- functions of getting properties of services should be called in the correct component
+- services methods of getting properties should be used in the needed component
 
-# Chap6
+# Chap6 (Routing)
 
 - Setting routers basic
 
@@ -792,8 +793,8 @@ imports: [BrowserModule, FormsModule, RouterModule.forRoot(appRoutes)],
 ```
 
 - Navigating with Router Links (routerLink prevent the default of sending request to the server,thus no refresh occurs)
-- why /? ans: absolute path
-- e.g. relative path: ./server ,server
+- what is / ans: absolute path
+- routerLink can also use relative path: ./server ,server
 
 ```
     <li role="presentation"><a routerLink="/servers">Servers</a></li>
@@ -801,6 +802,7 @@ imports: [BrowserModule, FormsModule, RouterModule.forRoot(appRoutes)],
 ```
 
 - Styling Active Router Links
+- without extract:true , there will be multiple links shown active in the ui
 
 ```
 <li
@@ -882,10 +884,9 @@ export class UserComponent implements OnInit {
 }
 ```
 
-- async tasks: subscribing to something that might happen in the future, and once that event occurs, a piece of code will execute in response.
-- observables work with async tasks
-- if we are in the same component , the route will not work
-- this.route.params is a observables
+- Changes occur in a subscription, so Angular checks for updates in properties and renders the template accordingly.
+- Changes occur without any observable or event context, and since the reference remains the same, Angular does not detect any change to trigger an update.
+- the observable does not have initial value
 
 ```
 export class UserComponent implements OnInit {
@@ -906,8 +907,15 @@ export class UserComponent implements OnInit {
 }
 ```
 
+- async tasks: subscribing to something that might happen in the future, and once that event occurs, a piece of code will execute in response.
+- observables work with async tasks
+- if we are in the same component , if the route params change , the ui will not rerender
+- this.route.params is a observables
+- Change Detection in Angular (basics):
+
 - Delete subscription
 - add paramsSubscription: Subscription
+- the observable does not have initial value
 
 ```
 export class UserComponent implements OnInit, OnDestroy {
@@ -933,7 +941,7 @@ export class UserComponent implements OnInit, OnDestroy {
 }
 ```
 
-- passing query parameters and navigating programmatically
+- navigating programmatically with query parameter
 
 ```
 ### servers.component.html ###
@@ -1004,6 +1012,7 @@ add <router-outlet><router-outlet/>
 ```
 
 - queryParams preserve
+- the following code focus from server.component to edit server after clicking the edit server button ((allowEdit=false))
 
 ```
 ### server.component.ts### (navigating programmatically)
@@ -1014,7 +1023,7 @@ add <router-outlet><router-outlet/>
     });
   }
 
-### edit-server.component.ts ### (allowEdit=false)
+### edit-server.component.ts ###
 export class EditServerComponent implements OnInit {
   server: { id: number; name: string; status: string };
   serverName = '';
@@ -1050,7 +1059,11 @@ export class EditServerComponent implements OnInit {
 
 - redirecting and wildcard Routes
 - path matching with component vs redirect
-- the difference is that components allow for more specific matching, while redirects tend to match everything starting with the given path, unless you explicitly tell them to match fully.
+- the difference is that components path allow for more specific matching, while redirects tend to match everything starting with the given path, unless you explicitly tell them to match fully.
+
+```
+{ path: '', redirectTo: '/not-found' }, //do not place in the first index, the frontend will serve wrong result
+```
 
 ```
 const appRoutes: Routes = [ ...
@@ -1095,8 +1108,7 @@ export class AppRoutingModule {}
 
 ```
 
-- route accessing guard
-- protecting routes with guard (whole route)
+- route accessing guard (protecting whole guard)
 - login logic in service
 - the auth guard will be failed if insert by url (this may be fix in the later course)
 
@@ -1264,7 +1276,7 @@ export class ErrorPageComponent implements OnInit {
 
 - resolver: run code before a route is render
 - the alternative method is to load in the OnInit method
-- the resolver will always run when rerendering unlike component need to subscribe
+- the resolver will always run when rerendering unlike same component need to subscribe the route to rerender
 - passing dynamic data through route
 
 ```
@@ -1345,12 +1357,11 @@ app.get('/*', (req, res) => {
 
 ```
 
-# Chap7
+# Chap7 (Observables)
 
-- observable: data source from Events, Http requests ....
-- observer: the subscribe code where we receive data, receive error and receive completion(not always complete such as interval)
-- observable are just alternative methids such as callback and promises
-
+- observable: A data stream that emits value over time and other parts of the program can subscribe. (E.g. data source from Events, Http requests ....)
+- observer: The output of the observable. Three possibles methods inside it: next() (receive data), error()(receive error) and complete() (receive completion) [not always complete such as interval]
+- observable are just alternative methods such as callback and promises
 - observable basics (delete subscription when leaving the component)
 
 ```
@@ -1440,6 +1451,17 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.firstObsSubscription.unsubscribe();
   }
 }
+
+```
+
+- Alternative: it can also be represented by three callback functions
+
+```
+customIntervalObservable.subscribe({
+next: value => {console.log('subscription data:', data)}
+error: err => {console.log(error);alert(error.message)},
+complete: () => {console.log('completed');}
+});
 ```
 
 - operators in rxjs (data processing)
@@ -1513,9 +1535,40 @@ export class AppComponent implements OnInit {
 
 - replace using rxjs subject
 - subject vs event emitter
-- subject is a kind of observable since it has next method
+- subject is a observable (can be subscribe) and observer (next method)
 - difference: observable wraps callback, or event or something and next method is inside but the next method in subject can be called outside
+
+```
+const button = document.getElementById('myButton');
+
+const clickObservable = new Observable(observer => {
+  // Define the event handler
+  const clickHandler = (event) => {
+    observer.next(event);  // Emit the click event to the observer
+  };
+
+  // Attach the event listener to the button
+  button.addEventListener('click', clickHandler);
+
+  // Cleanup logic when the observable is unsubscribed
+  return () => {
+    button.removeEventListener('click', clickHandler);
+  };
+});
+
+// Subscribe to the click observable
+clickObservable.subscribe({
+  next: event => console.log('Button clicked!', event),
+  complete: () => console.log('Observable complete!'),
+});
+```
+
 - use subject instead of eventEmitter(observables)
+- difference between Subject and behaviorSubject
+- subject: no initial value (subscriber not receive inital value after subscription), Multicast(when a value is emmited, it would sent to all subscriber(e.g. event,user inputs))
+- behaviorSubject: initial value(subscriber receive inital value after subscription (e.g. managing application state))
+- observables: unicast
+- subjects and behaviorSubject: multicast
 
 ```
 ### user.service.ts ###
@@ -1555,7 +1608,90 @@ export class AppComponent implements OnInit {
 <p *ngIf="userActivated">Activated</p>
 ```
 
-# Chap8
+- Inportant thoughts
+- reactivity manually means ensuring that the component knows when to re-render its UI when a value changes
+- methods: Using Angular’s ChangeDetectorRef, Manually Fetching Data in the Component, Using Observables (Reactive Programming)
+
+```
+## manually fetch
+export class MyComponent {
+  currentData: string;
+
+  constructor(public globalService: GlobalService) {
+    this.currentData = this.globalService.data; // Initialize with service data
+  }
+
+  updateData() {
+    this.globalService.changeData('Updated Data');
+
+    // Manually fetch updated data
+    this.currentData = this.globalService.data;
+  }
+}
+
+## observables
+## behaviorSubject
+export class GlobalService {
+  private dataSubject = new BehaviorSubject<string>('Initial Data');
+  data$ = this.dataSubject.asObservable();
+
+  changeData(newData: string) {
+    this.dataSubject.next(newData);
+  }
+}
+
+export class MyComponent implements OnInit {
+  currentData: string;
+
+  constructor(private globalService: GlobalService) {}
+
+  ngOnInit() {
+    this.globalService.data$.subscribe((newData: string) => {
+      this.currentData = newData;  // Automatically update when data changes
+    });
+  }
+
+  updateData() {
+    this.globalService.changeData('Updated Data');
+  }
+}
+
+#############################################################
+
+## observables
+## Subject
+export class GlobalService {
+
+  private dataSubject = new Subject<string>();
+  data$ = this.dataSubject.asObservable();
+
+  constructor() {
+    this.dataSubject.next('Initial Value');
+  }
+
+  changeData(newData: string) {
+    this.dataSubject.next(newData);  // Emit new data to subscribers
+  }
+}
+
+export class MyComponent implements OnInit {
+  currentData: string;
+
+  constructor(private globalService: GlobalService) {}
+
+  ngOnInit() {
+    this.globalService.data$.subscribe((newData: string) => {
+      this.currentData = newData;
+    });
+  }
+
+  updateData() {
+    this.globalService.changeData('Updated Data');
+  }
+}
+```
+
+# Chap8 (Forms)
 
 - basics html
 - the for attribute should be used on the <label> element with the same value as the input’s id.
@@ -1575,14 +1711,18 @@ form > form group > form control
 ```
 - make sure import FormsModule in app.module.ts
 - it will create a js form representation when it detect form html tag
+- the js form representation can be used in the html or ts file
 - we should manually tell what the form representation looks like
 ```
 
 - basics
-- ngModel without binding
+- id and for are binded
+- ngModel without binding: tags for js form representation
+- name: key name for the object
+- template variable f and ngSubmit
 
 ```
-### app.component.html ### [(ngSubmit)="onSubmit(f)" #f="ngForm" && ngModel name="username"]
+### app.component.html ###
 
 <form (ngSubmit)="onSubmit(f)" #f="ngForm">
   <div id="user-data">
@@ -1608,10 +1748,9 @@ export class AppComponent {
     console.log(form);
   }
 }
-```
 
-```
-properties: dirty(inserting value), disable, invlaid, touched(cursor activated)
+// properties inside form: dirty (it is dirty after inserting value), disable, invlaid, touched(cursor activated)
+
 ```
 
 - using viewChild can checked before submit
@@ -1647,6 +1786,7 @@ export class AppComponent {
 
 - adding validation (is not a directive)
 - https://v17.angular.io/api/forms/Validators (mix,max,required...)
+- required and email
 
 ```
 ### app.component.html ###
@@ -1700,6 +1840,7 @@ input.ng-invalid.ng-touched {
 ```
 
 - one way binding to set default values
+- [ngModel]
 
 ```
 ### app.component.html ###
@@ -1718,6 +1859,7 @@ input.ng-invalid.ng-touched {
 ```
 
 - two way binding
+- [(ngModel)]
 
 ```
 ### app.component.html ###
@@ -1772,6 +1914,7 @@ input.ng-invalid.ng-touched {
 ```
 
 - radio button
+- same as checkbox
 
 ```
 ### app.component.html ###
@@ -2036,4 +2179,177 @@ getControls() {
 </div>
 ```
 
-- 530
+- Review
+- regular function: depends on the caller e.g. window
+- arrow function: depends on where it is defined (lexical scope)
+- arrow function does not create it own this
+
+- custom validator
+- this.forbiddenNames is passed as reference (a regular function) thus this in this situation is the caller e.g. window
+
+```
+
+### app.component.html ###
+
+<span
+  class="help-block"
+  *ngIf="
+    !signupForm.get('userData.username').valid &&
+    signupForm.get('userData.username').touched
+  "
+>
+  <span
+    *ngIf="
+      signupForm.get('userData.username').errors['nameIsForbidden']
+    "
+  >
+    this name is invalid
+  </span>
+  <span
+    *ngIf="signupForm.get('userData.username').errors['required']"
+  >
+    this field is required
+  </span>
+</span>
+
+
+### app.component.ts ###
+
+  ngOnInit(): void {
+    this.signupForm = new FormGroup({
+      userData: new FormGroup({
+        username: new FormControl(null, [
+          Validators.required,
+          this.forbiddenNames.bind(this),
+        ]),
+        email: new FormControl(null, [Validators.required, Validators.email]),
+      }),
+      gender: new FormControl('male'),
+      hobbies: new FormArray([]),
+    });
+  }
+
+forbiddenNames(control: FormControl): { [s: string]: boolean } {
+  console.log('control.value', control.value);
+  if (this.forbiddenUsernames.indexOf(control.value) !== -1) {
+    return { nameIsForbidden: true };
+  }
+  return null;
+}
+
+
+
+```
+
+- async validators
+- review
+
+```
+Promise: single value, eager ,not cancellable
+Observable: multiple value, lazy, cancellable
+```
+
+```
+### app.component.ts ###
+
+ngOnInit(): void {
+  this.signupForm = new FormGroup({
+    userData: new FormGroup({
+      username: new FormControl(null, [
+        Validators.required,
+        this.forbiddenNames.bind(this),
+      ]),
+      email: new FormControl(
+        null,
+        [Validators.required, Validators.email],
+        this.forbiddenEmails
+      ),
+    }),
+    gender: new FormControl('male'),
+    hobbies: new FormArray([]),
+  });
+}
+
+
+forbiddenEmails(control: FormControl): Promise<any> | Observable<any> {
+  const promise = new Promise<any>((resolve, reject) => {
+    setTimeout(() => {
+      if (control.value === 'test@test.com') {
+        resolve({ emailIsForbidden: true });
+      } else {
+        resolve(null);
+      }
+    }, 1500);
+  });
+  return promise;
+}
+
+```
+
+- monitoring status or value change in the form
+
+```
+### app.compomenent.ts ###
+this.signupForm.valueChanges.subscribe((value) => {
+  console.log(value);
+})
+this.signupForm.statusChanges.subscribe((value) => {
+  console.log(value);
+});
+```
+
+- programmatically set and patch values
+
+```
+### app.component.ts ###
+  ngOnInit(): void {
+    this.signupForm = new FormGroup({
+      userData: new FormGroup({
+        username: new FormControl('NewUser', [
+          Validators.required,
+          this.forbiddenNames.bind(this),
+        ]),
+        email: new FormControl(
+          null,
+          [Validators.required, Validators.email],
+          this.forbiddenEmails
+        ),
+      }),
+      gender: new FormControl('male'),
+      hobbies: new FormArray([
+        new FormControl('music'),
+        new FormControl('sports'),
+      ]),
+    });
+    this.signupForm.valueChanges.subscribe((value) => {
+      console.log(value);
+    })
+    this.signupForm.statusChanges.subscribe((value) => {
+      console.log(value);
+    });
+    this.signupForm.setValue({
+      userData: {
+        username: 'Max',
+        email: 'max@example.com',
+      },
+      gender: 'male',
+      hobbies: ['eatting', 'sleeping'],
+    });
+    this.signupForm.patchValue({
+      userData: {
+        username: 'Max',
+        email: 'max@example.com',
+      },
+    });
+  }
+  onSubmit() {
+    console.log(this.signupForm);
+    this.signupForm.reset({
+      userData: { username: 'NewUser' },
+      gender: 'male',
+      hobbies: ['music', 'sports'],
+    });
+  }
+
+
+```

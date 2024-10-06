@@ -25,6 +25,9 @@ observableExample/.angular
 reactiveFormExample/node_modules
 reactiveFormExample/.vscode
 reactiveFormExample/.angular
+reactiveFormExampleProject/node_modules
+reactiveFormExampleProject/.vscode
+reactiveFormExampleProject/.angular
 tdFormExample/node_modules
 tdFormExample/.vscode
 tdFormExample/.angular
