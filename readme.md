@@ -732,8 +732,9 @@ export class NewAccountComponent {
 ## another solution: @Injectable({ providedIn: 'root' }) to all services and no providers in app.module.ts
 ```
 
-- pushing data methods: 1.directly 2. new EventEmitter (sometimes you do not want to directly update original value)
-- the addIngredients works (the value is updated in this.ingredients.push(ingredient)) due to event trigger
+- pushing data: 1.manual fetching, 2.new EventEmitter (sometimes you do not want to directly update original value)
+- below link does not work in update situations
+  https://stackoverflow.com/questions/38475557/angular2-iterable-differ-doesnt-detect-change
 
 ```
 export class ShoppingListService {
@@ -744,12 +745,10 @@ export class ShoppingListService {
   ];
 
   getIngredients() {
-    // return this.ingredients; //ok
     return this.ingredients.slice(); // work with copy array
   }
 
   addIngredient(ingredient: Ingredient) {
-    // this.ingredients.push(ingredient); //ok
     this.ingredients.push(ingredient);
     this.ingredientsChanged.emit(this.ingredients.slice());
   }
