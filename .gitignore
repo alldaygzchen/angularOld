@@ -34,3 +34,6 @@ tdFormExample/.angular
 tdFormExampleProject/node_modules
 tdFormExampleProject/.vscode
 tdFormExampleProject/.angular
+experiment/node_modules
+experiment/.vscode
+experiment/.angular

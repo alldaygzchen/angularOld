@@ -675,7 +675,18 @@ export class AccountsService {
 ```
 
 - cross component injection with service and EventEmitter
-- even it is global, changes to the properties of the service won't automatically trigger re-rendering of components that use it.
+- even if it is global service, changes to the properties of the service may notautomatically trigger re-rendering of components that use it.
+- how angular and react changes detection works:
+
+```
+Angular:
+- primitive types: comparing the previous and current value. (if the component’s data variable is not updated,  it's still referencing the initial value, and Angular doesn’t know about the change.)
+- reference types: 1. If the reference itself changes, Angular updates the UI.(mutating the array's contents without changing its reference. In many cases, Angular's default change detection won't notice these internal mutations unless something triggers it, such as *ngfor)
+
+React:
+-React re-renders components based on changes to state or props. It doesn't matter if the state is primitive or reference;( because it compares the current state with the new state.)
+- But if you mutate an array or object directly without using the state update function (setState), React will not detect the change.
+```
 
 ```
 
@@ -732,9 +743,7 @@ export class NewAccountComponent {
 ## another solution: @Injectable({ providedIn: 'root' }) to all services and no providers in app.module.ts
 ```
 
-- pushing data: 1.manual fetching, 2.new EventEmitter (sometimes you do not want to directly update original value)
-- below link does not work in update situations
-  https://stackoverflow.com/questions/38475557/angular2-iterable-differ-doesnt-detect-change
+- pushing data: 1.manual fetching, 2.new EventEmitter or Observables and slice() ( return a shallow copy of the array, so external code can still work with the data, but it cannot modify the original array stored inside the service.)
 
 ```
 export class ShoppingListService {
@@ -884,7 +893,6 @@ export class UserComponent implements OnInit {
 ```
 
 - Changes occur in a subscription, so Angular checks for updates in properties and renders the template accordingly.
-- Changes occur without any observable or event context, and since the reference remains the same, Angular does not detect any change to trigger an update.
 - the observable does not have initial value
 
 ```
@@ -1352,7 +1360,7 @@ app.get('/*', (req, res) => {
 2. Angular starts change detection at the root (AppComponent)
 3. Angular checks each child component in the tree
 4. If it finds a change, it updates the UI for that component
-5. If no observable and event triggers,changes to a service's property  (even in a component-specific service)  may not be reflected in the UI.
+5. If no observable and manual fetching event,changes to a service's property  (even in a component-specific service)  may not be reflected in the UI.
 
 ```
 
@@ -1612,7 +1620,7 @@ export class AppComponent implements OnInit {
 - methods: Using Angular’s ChangeDetectorRef, Manually Fetching Data in the Component, Using Observables (Reactive Programming)
 
 ```
-## manually fetch
+## manually fetch in own component
 export class MyComponent {
   currentData: string;
 
