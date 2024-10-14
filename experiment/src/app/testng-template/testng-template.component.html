@@ -1,0 +1,17 @@
+<ng-template [ngIf]="true">
+  <p>hello world</p>
+</ng-template>
+
+<ng-container *ngIf="true">
+  <p>This content will render if true</p>
+</ng-container>
+
+<ng-template #userTemplate let-user="user" let-index="index">
+  <p>{{ index + 1 }}. {{ user.name }}=>{{ user.age }}</p>
+</ng-template>
+
+<ng-container *ngFor="let user of users; let i = index">
+  <ng-container
+    *ngTemplateOutlet="userTemplate; context: { user: user, index: i }"
+  ></ng-container>
+</ng-container>
